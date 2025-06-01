@@ -44,7 +44,9 @@ def get_services(url):
         services_list = []
         for li in soup.find_all("li"):
             text = li.get_text(strip=True)
-            if any(k in text.lower() for k in ["staffing", "training", "education", "skilling", "hr", "compliance", "apprenticeship", "degree"]):
+            if any(k in text.lower() for k in [
+                "staffing", "training", "education", "skilling", "hr", "compliance", "apprenticeship", "degree"
+            ]):
                 services_list.append(text)
         return list(set(services_list))[:10] or ["No services found."]
     except Exception as e:
@@ -72,12 +74,14 @@ You are a lead qualification expert.
 {domain}
 
 Instructions:
-- If the comment includes keywords or phrases that closely match the company services, rate it:
-    1: Highly Qualified
-    2: Medium Qualified
-    3: Not Qualified
-- Focus only on service match or relevance to services.
-- Only return a number: 1, 2, or 3. No explanation.
+- Compare the company's services to the comment.
+- Count how many of the services are clearly mentioned or strongly implied in the comment.
+- Use the following logic to assign a rating:
+    - If more than 50% of services are matched in the comment → Rating: 1
+    - If more than 25% and up to 50% are matched → Rating: 2
+    - If 25% or fewer are matched → Rating: 3
+- Focus only on the match between services and comment — ignore domain for now.
+- Return only the rating number: 1, 2, or 3.
 """
 
         payload = {
