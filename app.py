@@ -55,7 +55,10 @@ def get_services(url):
 def get_llm_rating(provider, api_key, services, comment, domain):
     try:
         if provider not in LLM_PROVIDERS:
-            return 3  # default
+            return 3
+
+        if not str(comment).strip():
+            return 0
 
         config = LLM_PROVIDERS[provider]
         if not config["url"]:
@@ -74,14 +77,16 @@ You are a lead qualification expert.
 {domain}
 
 Instructions:
-- Compare the company's services to the comment.
-- Count how many of the services are clearly mentioned or strongly implied in the comment.
-- Use the following logic to assign a rating:
-    - If more than 50% of services are matched in the comment → Rating: 1
-    - If more than 25% and up to 50% are matched → Rating: 2
-    - If 25% or fewer are matched → Rating: 3
-- Focus only on the match between services and comment — ignore domain for now.
-- Return only the rating number: 1, 2, or 3.
+- If the comment is empty or missing, return 0.
+- If the comment does not logically or reasonably relate to the services provided, return 3.
+- Count how many services are clearly matched in the comment.
+- Use this rating system:
+    - Rating 1: More than 50% of the services are matched
+    - Rating 2: 25–50% of the services are matched
+    - Rating 3: Less than 25% or irrelevant comment
+    - Rating 0: Comment is missing or empty
+
+Only return a single digit rating (0, 1, 2, or 3). Do not include any explanation.
 """
 
         payload = {
@@ -92,9 +97,9 @@ Instructions:
 
         response = requests.post(config["url"], headers=config["headers"](api_key), data=json.dumps(payload))
         rating = response.json()['choices'][0]['message']['content'].strip()
-        return int(rating) if rating in ['1', '2', '3'] else 3
+        return int(rating) if rating in ['0', '1', '2', '3'] else 3
     except Exception:
-        return 3  # fallback if any error
+        return 3
 
 # -------------------------------
 # Streamlit UI
@@ -144,7 +149,7 @@ if uploaded_file:
     st.dataframe(df)
 
     if api_key:
-        st.markdown("### ⭐ Company Rating (1 = High, 3 = Low)")
+        st.markdown("### ⭐ Company Rating (0 = No Comment, 1 = High, 3 = Low)")
         ratings = []
         with st.spinner("Evaluating leads with LLM..."):
             for _, row in df.iterrows():
