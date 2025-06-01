@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import re
 import requests
-from bs4 import BeautifulSoup
+# from bs4 import BeautifulSoup  # Commented out: no longer needed
 import json
 
 # -------------------------------
@@ -10,7 +10,10 @@ import json
 # -------------------------------
 COMPANY_NAME = "Teamlease"
 COMPANY_WEBSITE = "https://www.teamlease.com"
-SERVICES_URL = "https://group.teamlease.com/"
+# SERVICES_URL = "https://group.teamlease.com/"  # Commented out: scraping disabled
+
+# Hardcoded services instead of scraping
+HARDCODED_SERVICES = ["Staffing", "Hiring", "Infrastructure and Assets", "Learning", "Compliance"]
 
 LLM_PROVIDERS = {
     "Groq (Mixtral - Free)": {
@@ -37,20 +40,21 @@ def extract_domain(email):
     match = re.search(r'@([A-Za-z0-9.-]+)', str(email))
     return match.group(1) if match else ""
 
-def get_services(url):
-    try:
-        response = requests.get(url, timeout=10)
-        soup = BeautifulSoup(response.text, 'html.parser')
-        services_list = []
-        for li in soup.find_all("li"):
-            text = li.get_text(strip=True)
-            if any(k in text.lower() for k in [
-                "staffing", "training", "education", "skilling", "hr", "compliance", "apprenticeship", "degree"
-            ]):
-                services_list.append(text)
-        return list(set(services_list))[:10] or ["No services found."]
-    except Exception as e:
-        return [f"Error fetching services: {e}"]
+# Commented out: no longer scraping
+# def get_services(url):
+#     try:
+#         response = requests.get(url, timeout=10)
+#         soup = BeautifulSoup(response.text, 'html.parser')
+#         services_list = []
+#         for li in soup.find_all("li"):
+#             text = li.get_text(strip=True)
+#             if any(k in text.lower() for k in [
+#                 "staffing", "training", "education", "skilling", "hr", "compliance", "apprenticeship", "degree"
+#             ]):
+#                 services_list.append(text)
+#         return list(set(services_list))[:10] or ["No services found."]
+#     except Exception as e:
+#         return [f"Error fetching services: {e}"]
 
 def get_llm_rating(provider, api_key, services, comment, domain):
     try:
@@ -116,9 +120,8 @@ api_key = st.sidebar.text_input("Enter API Key", type="password")
 st.markdown("### 🏢 Company Info")
 st.write(f"**Company Name:** {COMPANY_NAME}")
 st.write(f"**Website:** [{COMPANY_WEBSITE}]({COMPANY_WEBSITE})")
-services = get_services(SERVICES_URL)
 st.write("**Services Provided:**")
-for s in services:
+for s in HARDCODED_SERVICES:
     st.markdown(f"- {s}")
 
 # File Upload Section
@@ -156,7 +159,7 @@ if uploaded_file:
                 rating = get_llm_rating(
                     selected_llm,
                     api_key,
-                    services,
+                    HARDCODED_SERVICES,
                     row.get("Comment", ""),
                     row.get("Domain", "")
                 )
